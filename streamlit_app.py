@@ -1,27 +1,63 @@
 import streamlit as st
-import zipfile, io
+from zipfile import ZipFile
 from datetime import date
+from odf.opendocument import load
+from odf.text import P
 
-st.set_page_config(page_title="Formulário RDP/RMP", layout="centered")
-st.title("Assistente Automático - SQI004A")
+def preencher_odt(campos, modelo_path, saida_path):
+    doc = load(modelo_path)
+    for p in doc.getElementsByType(P):
+        for i, node in enumerate(p.childNodes):
+            if node.nodeType == 3:  # TEXT_NODE
+                for chave, valor in campos.items():
+                    if f"{{{{{chave}}}}}" in node.data:
+                        node.data = node.data.replace(f"{{{{{chave}}}}}", valor)
+    doc.save(saida_path)
 
-# Coleta de dados
+st.set_page_config(page_title="Formulário SQI004A", layout="centered")
+st.title("Preenchimento Automático - SQI004A")
+
+# Formulário
 cliente = st.text_input("Cliente")
-codigo_rdp = st.text_input("Código RDP")
-motivos = st.multiselect("Motivos", ["Redução de Custo", "Solicitação Cliente", "Padronização", "Melhoria Técnica"])
+preco_mercado = st.text_input("Preço Mercado")
+contato = st.text_input("Contato")
+potencial = st.text_input("Potencial")
+cod_produto_cliente = st.text_input("Código Produto Cliente")
+produto_intelli = st.text_input("Produto Intelli")
+especificacoes = st.text_area("Especificações / Desenho")
+normas = st.text_input("Normas")
+motivos = st.text_area("Motivos")
+processos = st.text_area("Processos Envolvidos")
+ferramentas = st.text_area("Ferramentas Envolvidas")
+anexos = st.text_area("Anexos")
 observacoes = st.text_area("Observações")
 data_inicio = st.date_input("Data de Início", value=date.today())
+data_conclusao = st.date_input("Data de Conclusão")
 
-# Geração do conteúdo simulado
-if st.button("Gerar Formulário"):
-    conteudo = f"""
-    Cliente: {cliente}
-    Código RDP: {codigo_rdp}
-    Data Início: {data_inicio}
-    Motivos: {', '.join(motivos)}
-    Observações: {observacoes}
-    """
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w") as zf:
-        zf.writestr("formulario_SQI004A.txt", conteudo)
-    st.download_button("📥 Baixar Formulário (ZIP)", buffer.getvalue(), "formulario_gerado.zip", "application/zip")
+if st.button("Gerar Relatório"):
+    campos = {
+        "cliente": cliente,
+        "preco_mercado": preco_mercado,
+        "contato": contato,
+        "potencial": potencial,
+        "cod_produto_cliente": cod_produto_cliente,
+        "produto_intelli": produto_intelli,
+        "especificacoes": especificacoes,
+        "normas": normas,
+        "motivos": motivos,
+        "processos": processos,
+        "ferramentas": ferramentas,
+        "anexos": anexos,
+        "observacoes": observacoes,
+        "data_inicio": str(data_inicio),
+        "data_conclusao": str(data_conclusao)
+    }
+    modelo = "templates/SQI004A_modelo_marcado.odt"
+    saida = "SQI004A_preenchido.odt"
+    preencher_odt(campos, modelo, saida)
+
+    with ZipFile("SQI004A_final.zip", "w") as zf:
+        zf.write(saida)
+
+    with open("SQI004A_final.zip", "rb") as f:
+        st.download_button("📥 Baixar Relatório (ZIP)", f.read(), "SQI004A_final.zip", "application/zip")
