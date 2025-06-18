@@ -7,32 +7,28 @@ from odf.text import P
 def preencher_odt(campos, modelo_path, saida_path):
     doc = load(modelo_path)
     for p in doc.getElementsByType(P):
-        full_text = ""
-        for node in p.childNodes:
-            if node.nodeType == 3:  # TEXT_NODE
-                full_text += node.data
+        full_text = "".join(
+            node.data for node in p.childNodes if node.nodeType == 3
+        )
 
+        atualizado = False
         for chave, valor in campos.items():
-            if f"{{{{{chave}}}}}" in full_text:
-                full_text = full_text.replace(f"{{{{{chave}}}}}", valor)
+            marcador = f"{{{{{chave}}}}}"
+            if marcador in full_text:
+                full_text = full_text.replace(marcador, valor)
+                atualizado = True
 
-        # Atualiza o primeiro TEXT_NODE e ignora os demais
-        first_text_node_found = False
-        for node in list(p.childNodes):
-            if node.nodeType == 3:  # TEXT_NODE
-                if not first_text_node_found:
-                    node.data = full_text
-                    first_text_node_found = True
-                else:
-                    p.removeChild(node)
+        if atualizado:
+            while p.hasChildNodes():
+                p.removeChild(p.firstChild)
+            p.addText(full_text)
 
     doc.save(saida_path)
-
 
 st.set_page_config(page_title="Formulário SQI004A", layout="centered")
 st.title("Preenchimento Automático - SQI004A")
 
-# Formulário
+# Campos do formulário
 cliente = st.text_input("Cliente")
 preco_mercado = st.text_input("Preço Mercado")
 contato = st.text_input("Contato")
