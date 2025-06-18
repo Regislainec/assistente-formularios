@@ -16,14 +16,18 @@ def preencher_odt(campos, modelo_path, saida_path):
             if f"{{{{{chave}}}}}" in full_text:
                 full_text = full_text.replace(f"{{{{{chave}}}}}", valor)
 
-        # Reatribuir o texto inteiro ao primeiro nó e limpar os demais
-        if p.childNodes:
-            if p.childNodes[0].nodeType == 3:
-                p.childNodes[0].data = full_text
-                for extra in list(p.childNodes)[1:]:
-                    p.removeChild(extra)
+        # Atualiza o primeiro TEXT_NODE e ignora os demais
+        first_text_node_found = False
+        for node in list(p.childNodes):
+            if node.nodeType == 3:  # TEXT_NODE
+                if not first_text_node_found:
+                    node.data = full_text
+                    first_text_node_found = True
+                else:
+                    p.removeChild(node)
 
     doc.save(saida_path)
+
 
 st.set_page_config(page_title="Formulário SQI004A", layout="centered")
 st.title("Preenchimento Automático - SQI004A")
