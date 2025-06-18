@@ -3,13 +3,13 @@ from zipfile import ZipFile
 from datetime import date
 from odf.opendocument import load
 from odf.text import P, Span
+from odf.element import Element
 
 # Função para preencher campos no .odt
 def preencher_odt(campos, modelo_path, saida_path):
     doc = load(modelo_path)
 
     for p in doc.getElementsByType(P):
-        # Captura apenas o texto contido nos nós de texto simples
         full_text = "".join(
             node.data for node in p.childNodes if node.nodeType == 3
         )
@@ -22,10 +22,9 @@ def preencher_odt(campos, modelo_path, saida_path):
                 atualizado = True
 
         if atualizado:
-            # Remove todos os elementos filhos do parágrafo
             for node in list(p.childNodes):
-                p.removeChild(node)
-            # Adiciona um novo conteúdo com o texto substituído
+                if isinstance(node, Element):
+                    p.removeChild(node)
             span = Span(text=full_text)
             p.addElement(span)
 
