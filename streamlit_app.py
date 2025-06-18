@@ -7,11 +7,22 @@ from odf.text import P
 def preencher_odt(campos, modelo_path, saida_path):
     doc = load(modelo_path)
     for p in doc.getElementsByType(P):
-        for i, node in enumerate(p.childNodes):
+        full_text = ""
+        for node in p.childNodes:
             if node.nodeType == 3:  # TEXT_NODE
-                for chave, valor in campos.items():
-                    if f"{{{{{chave}}}}}" in node.data:
-                        node.data = node.data.replace(f"{{{{{chave}}}}}", valor)
+                full_text += node.data
+
+        for chave, valor in campos.items():
+            if f"{{{{{chave}}}}}" in full_text:
+                full_text = full_text.replace(f"{{{{{chave}}}}}", valor)
+
+        # Reatribuir o texto inteiro ao primeiro nó e limpar os demais
+        if p.childNodes:
+            if p.childNodes[0].nodeType == 3:
+                p.childNodes[0].data = full_text
+                for extra in list(p.childNodes)[1:]:
+                    p.removeChild(extra)
+
     doc.save(saida_path)
 
 st.set_page_config(page_title="Formulário SQI004A", layout="centered")
@@ -52,6 +63,7 @@ if st.button("Gerar Relatório"):
         "data_inicio": str(data_inicio),
         "data_conclusao": str(data_conclusao)
     }
+
     modelo = "templates/SQI004A_modelo_marcado.odt"
     saida = "SQI004A_preenchido.odt"
     preencher_odt(campos, modelo, saida)
