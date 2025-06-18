@@ -19,11 +19,15 @@ def preencher_odt(campos, modelo_path, saida_path):
                 atualizado = True
 
         if atualizado:
-            while p.hasChildNodes():
-                p.removeChild(p.firstChild)
-            p.addText(full_text)
+            for child in list(p.childNodes):
+                if child.nodeType == 3:  # somente nós de texto
+                    p.removeChild(child)
+            from odf.text import Span
+            span = Span(text=full_text)
+            p.addElement(span)
 
     doc.save(saida_path)
+
 
 st.set_page_config(page_title="Formulário SQI004A", layout="centered")
 st.title("Preenchimento Automático - SQI004A")
