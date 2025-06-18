@@ -2,7 +2,7 @@ import streamlit as st
 from zipfile import ZipFile
 from datetime import date
 from odf.opendocument import load
-from odf.text import P
+from odf.text import P, Span
 
 def preencher_odt(campos, modelo_path, saida_path):
     doc = load(modelo_path)
@@ -19,10 +19,10 @@ def preencher_odt(campos, modelo_path, saida_path):
                 atualizado = True
 
         if atualizado:
-            for child in list(p.childNodes):
-                if child.nodeType == 3:  # somente nós de texto
-                    p.removeChild(child)
-            from odf.text import Span
+            # Remove todos os filhos, sem verificar tipo
+            for node in list(p.childNodes):
+                p.removeChild(node)
+            # Adiciona um novo Span com o texto final
             span = Span(text=full_text)
             p.addElement(span)
 
